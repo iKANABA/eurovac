@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+.vite/
+
+# Java / Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
