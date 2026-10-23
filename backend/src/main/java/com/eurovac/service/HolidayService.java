@@ -2,6 +2,7 @@ package com.eurovac.service;
 
 import com.eurovac.model.Holiday;
 import com.eurovac.provider.HolidayProvider;
+import com.eurovac.provider.RawHoliday;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -16,10 +17,12 @@ public class HolidayService {
     HolidayProvider holidayProvider;
 
     public List<Holiday> getHolidays(String countryCode, String subdivisionCode, LocalDate from, LocalDate to) {
-        List<Holiday> holidays = new ArrayList<>();
-        holidays.addAll(holidayProvider.publicHolidays(countryCode, subdivisionCode, from, to));
-        holidays.addAll(holidayProvider.schoolHolidays(countryCode, subdivisionCode, from, to));
-        holidays.sort((a, b) -> a.startDate().compareTo(b.startDate()));
-        return holidays;
+        List<RawHoliday> raw = new ArrayList<>();
+        raw.addAll(holidayProvider.publicHolidays(countryCode, from, to));
+        raw.addAll(holidayProvider.schoolHolidays(countryCode, from, to));
+
+        return HolidayMapper.toHolidays(countryCode, subdivisionCode, raw).stream()
+                .sorted((a, b) -> a.startDate().compareTo(b.startDate()))
+                .toList();
     }
 }

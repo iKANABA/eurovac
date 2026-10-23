@@ -2,7 +2,7 @@ package com.eurovac.provider;
 
 import com.eurovac.client.OpenHolidaysApiClient;
 import com.eurovac.client.dto.ApiHolidayDto;
-import com.eurovac.model.Holiday;
+import com.eurovac.client.dto.SubdivisionDto;
 import com.eurovac.model.HolidayType;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -17,22 +17,28 @@ public class OpenHolidaysApiProvider implements HolidayProvider {
     OpenHolidaysApiClient client;
 
     @Override
-    public List<Holiday> publicHolidays(String countryCode, String subdivisionCode, LocalDate from, LocalDate to) {
-        return client.publicHolidays(countryCode, "EN", from, to, subdivisionCode).stream()
-                .map(dto -> toHoliday(dto, countryCode, subdivisionCode))
-                .toList();
+    public List<RawHoliday> publicHolidays(String countryCode, LocalDate from, LocalDate to) {
+        return client.publicHolidays(countryCode, "EN", from, to).stream().map(this::toRawHoliday).toList();
     }
 
     @Override
-    public List<Holiday> schoolHolidays(String countryCode, String subdivisionCode, LocalDate from, LocalDate to) {
-        return client.schoolHolidays(countryCode, "EN", from, to, subdivisionCode).stream()
-                .map(dto -> toHoliday(dto, countryCode, subdivisionCode))
+    public List<RawHoliday> schoolHolidays(String countryCode, LocalDate from, LocalDate to) {
+        return client.schoolHolidays(countryCode, "EN", from, to).stream().map(this::toRawHoliday).toList();
+    }
+
+    @Override
+    public List<Subdivision> subdivisions(String countryCode) {
+        return client.subdivisions(countryCode, "EN").stream()
+                .map(dto -> new Subdivision(dto.code(), dto.name().isEmpty() ? dto.code() : dto.name().get(0).text()))
                 .toList();
     }
 
-    private Holiday toHoliday(ApiHolidayDto dto, String countryCode, String subdivisionCode) {
+    private RawHoliday toRawHoliday(ApiHolidayDto dto) {
         String name = dto.name().isEmpty() ? dto.type() : dto.name().get(0).text();
         HolidayType type = "School".equalsIgnoreCase(dto.type()) ? HolidayType.SCHOOL : HolidayType.PUBLIC;
-        return new Holiday(countryCode, subdivisionCode, name, dto.startDate(), dto.endDate(), type);
+        List<String> subdivisionCodes = dto.subdivisions() == null
+                ? List.of()
+                : dto.subdivisions().stream().map(com.eurovac.client.dto.SubdivisionRef::code).toList();
+        return new RawHoliday(name, dto.startDate(), dto.endDate(), type, dto.nationwide(), subdivisionCodes);
     }
 }

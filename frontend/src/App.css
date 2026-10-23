@@ -1,27 +1,131 @@
 main {
-  max-width: 640px;
+  max-width: 1000px;
   margin: 2rem auto;
   padding: 0 1rem;
   font-family: system-ui, sans-serif;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #ddd;
-}
-
-.badge {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.3rem;
-  background: #eee;
-}
-
 .error {
   color: #b00020;
+}
+
+.country-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  background: #eef3f8;
+  border-radius: 0.5rem;
+  border: 1px solid #ccd;
+}
+
+.country-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid #889;
+  background: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.country-dot--selected {
+  background: #2d6cdf;
+  color: #fff;
+  border-color: #1b4fa8;
+}
+
+.subdivision-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.subdivision-picker {
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  max-width: 260px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.subdivision-picker label {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.analysis-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 1rem 0;
+}
+
+.date-range-picker {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.date-range-picker label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+}
+
+.view-toggle button[disabled] {
+  font-weight: 700;
+  background: #2d6cdf;
+  color: #fff;
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+}
+
+.heatmap,
+.analysis-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.heatmap th,
+.heatmap td,
+.analysis-table th,
+.analysis-table td {
+  border: 1px solid #ddd;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.heatmap-cell {
+  width: 1.5rem;
+  background: #fff;
+}
+
+.heatmap-cell--public {
+  background: #f2a900;
+}
+
+.heatmap-cell--school {
+  background: #2d9cdb;
+}
+
+.heatmap-cell--both {
+  background: linear-gradient(135deg, #f2a900 50%, #2d9cdb 50%);
+}
+
+.analysis-table button {
+  background: none;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
 }

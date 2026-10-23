@@ -1,6 +1,7 @@
 package com.eurovac.client;
 
 import com.eurovac.client.dto.ApiHolidayDto;
+import com.eurovac.client.dto.SubdivisionDto;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
@@ -18,8 +19,7 @@ public interface OpenHolidaysApiClient {
             @QueryParam("countryIsoCode") String countryIsoCode,
             @QueryParam("languageIsoCode") String languageIsoCode,
             @QueryParam("validFrom") LocalDate validFrom,
-            @QueryParam("validTo") LocalDate validTo,
-            @QueryParam("subdivisionCode") String subdivisionCode
+            @QueryParam("validTo") LocalDate validTo
     );
 
     @GET
@@ -28,7 +28,13 @@ public interface OpenHolidaysApiClient {
             @QueryParam("countryIsoCode") String countryIsoCode,
             @QueryParam("languageIsoCode") String languageIsoCode,
             @QueryParam("validFrom") LocalDate validFrom,
-            @QueryParam("validTo") LocalDate validTo,
-            @QueryParam("subdivisionCode") String subdivisionCode
+            @QueryParam("validTo") LocalDate validTo
+    );
+
+    @GET
+    @Path("/Subdivisions")
+    List<SubdivisionDto> subdivisions(
+            @QueryParam("countryIsoCode") String countryIsoCode,
+            @QueryParam("languageIsoCode") String languageIsoCode
     );
 }

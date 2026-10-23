@@ -8,6 +8,7 @@ public record Holiday(
         String name,
         LocalDate startDate,
         LocalDate endDate,
-        HolidayType type
+        HolidayType type,
+        boolean nationwide
 ) {
 }
