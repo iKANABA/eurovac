@@ -1,3 +1,5 @@
+import { DatePickerInput } from '@mantine/dates'
+
 interface DateRangePickerProps {
   from: string
   to: string
@@ -6,22 +8,16 @@ interface DateRangePickerProps {
 
 export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
   return (
-    <div className="date-range-picker">
-      <label>
-        Von
-        <input
-          type="date"
-          value={from}
-          onChange={(e) => {
-            const newFrom = e.target.value
-            onChange(newFrom, newFrom > to ? newFrom : to)
-          }}
-        />
-      </label>
-      <label>
-        Bis
-        <input type="date" value={to} min={from} onChange={(e) => onChange(from, e.target.value)} />
-      </label>
-    </div>
+    <DatePickerInput
+      type="range"
+      label="Zeitraum"
+      value={[from, to]}
+      onChange={(value) => {
+        const [start, end] = value
+        if (start && end) onChange(start, end)
+      }}
+      valueFormat="DD.MM.YYYY"
+      w={260}
+    />
   )
 }

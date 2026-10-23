@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Checkbox, Group, SegmentedControl, Stack } from '@mantine/core'
 import { fetchAnalysis, fetchSubdivisions } from '../api'
 import { buildHolidayAnalysis } from '../analysis'
 import { countryName } from '../countries'
@@ -111,51 +112,45 @@ export function HolidayAnalysisView() {
   return (
     <div className="holiday-analysis">
       <CountrySelectionMap selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
-      <MicroStateSelector selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
 
-      {countryCodes.length > 0 && (
-        <div className="subdivision-pickers">
-          {countryCodes.map((code) => (
-            <SubdivisionPicker
-              key={code}
-              countryName={countryName(code)}
-              subdivisions={subdivisionsByCountry.get(code) ?? []}
-              selectedSubdivisionCodes={selections.get(code) ?? null}
-              onChange={(codes) => setSubdivisions(code, codes)}
-            />
-          ))}
-        </div>
-      )}
+      <Group align="stretch" gap="md" mt="md" wrap="wrap">
+        <MicroStateSelector selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
+        {countryCodes.map((code) => (
+          <SubdivisionPicker
+            key={code}
+            countryName={countryName(code)}
+            subdivisions={subdivisionsByCountry.get(code) ?? []}
+            selectedSubdivisionCodes={selections.get(code) ?? null}
+            onChange={(codes) => setSubdivisions(code, codes)}
+          />
+        ))}
+      </Group>
 
-      <div className="analysis-controls">
+      <Group align="flex-end" gap="xl" my="lg" wrap="wrap">
         <DateRangePicker from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t) }} />
 
-        <label>
-          <input
-            type="checkbox"
+        <Stack gap={4}>
+          <Checkbox
+            label="Feiertage"
             checked={typeFilter.public}
-            onChange={(e) => setTypeFilter((f) => ({ ...f, public: e.target.checked }))}
+            onChange={(e) => setTypeFilter((f) => ({ ...f, public: e.currentTarget.checked }))}
           />
-          Feiertage
-        </label>
-        <label>
-          <input
-            type="checkbox"
+          <Checkbox
+            label="Schulferien"
             checked={typeFilter.school}
-            onChange={(e) => setTypeFilter((f) => ({ ...f, school: e.target.checked }))}
+            onChange={(e) => setTypeFilter((f) => ({ ...f, school: e.currentTarget.checked }))}
           />
-          Schulferien
-        </label>
+        </Stack>
 
-        <div className="view-toggle">
-          <button type="button" disabled={viewMode === 'heatmap'} onClick={() => setViewMode('heatmap')}>
-            Heatmap
-          </button>
-          <button type="button" disabled={viewMode === 'table'} onClick={() => setViewMode('table')}>
-            Tabelle
-          </button>
-        </div>
-      </div>
+        <SegmentedControl
+          value={viewMode}
+          onChange={(value) => setViewMode(value as 'heatmap' | 'table')}
+          data={[
+            { label: 'Heatmap', value: 'heatmap' },
+            { label: 'Tabelle', value: 'table' },
+          ]}
+        />
+      </Group>
 
       {error && <p className="error">Fehler: {error}</p>}
 

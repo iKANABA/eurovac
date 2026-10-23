@@ -1,3 +1,4 @@
+import { Checkbox, Paper, ScrollArea, Stack, Text } from '@mantine/core'
 import type { Subdivision } from '../types'
 
 interface SubdivisionPickerProps {
@@ -20,18 +21,22 @@ export function SubdivisionPicker({ countryName, subdivisions, selectedSubdivisi
   }
 
   return (
-    <fieldset className="subdivision-picker">
-      <legend>{countryName}: Bundesländer/Regionen</legend>
-      {subdivisions.map((subdivision) => (
-        <label key={subdivision.code}>
-          <input
-            type="checkbox"
-            checked={isChecked(subdivision.code)}
-            onChange={() => toggle(subdivision.code)}
-          />
-          {subdivision.name}
-        </label>
-      ))}
-    </fieldset>
+    <Paper withBorder radius="md" p="sm" className="selection-card">
+      <Text size="sm" fw={600} mb="xs">
+        {countryName}: Bundesländer/Regionen
+      </Text>
+      <ScrollArea.Autosize mah={150}>
+        <Stack gap={6}>
+          {subdivisions.map((subdivision) => (
+            <Checkbox
+              key={subdivision.code}
+              label={subdivision.name}
+              checked={isChecked(subdivision.code)}
+              onChange={() => toggle(subdivision.code)}
+            />
+          ))}
+        </Stack>
+      </ScrollArea.Autosize>
+    </Paper>
   )
 }
