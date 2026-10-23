@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -44,16 +45,33 @@ public class HolidayAnalysisService {
 
     private CompletableFuture<CountryData> fetchCountryData(String countryCode, LocalDate from, LocalDate to) {
         CompletableFuture<List<RawHoliday>> publicHolidays =
-                CompletableFuture.supplyAsync(() -> holidayProvider.publicHolidays(countryCode, from, to));
+                supplyAsyncWithClassLoader(() -> holidayProvider.publicHolidays(countryCode, from, to));
         CompletableFuture<List<RawHoliday>> schoolHolidays =
-                CompletableFuture.supplyAsync(() -> holidayProvider.schoolHolidays(countryCode, from, to));
+                supplyAsyncWithClassLoader(() -> holidayProvider.schoolHolidays(countryCode, from, to));
         CompletableFuture<List<Subdivision>> subdivisions =
-                CompletableFuture.supplyAsync(() -> holidayProvider.subdivisions(countryCode));
+                supplyAsyncWithClassLoader(() -> holidayProvider.subdivisions(countryCode));
 
         return CompletableFuture.allOf(publicHolidays, schoolHolidays, subdivisions).thenApply(v -> {
             List<RawHoliday> raw = new ArrayList<>(publicHolidays.join());
             raw.addAll(schoolHolidays.join());
             return new CountryData(raw, subdivisions.join());
+        });
+    }
+
+    // ForkJoinPool.commonPool() threads don't carry Quarkus's classloader as their
+    // context classloader, which breaks the dynamically generated REST client proxy's
+    // reflection-based JSON deserialization. Propagate the caller's classloader explicitly.
+    private <T> CompletableFuture<T> supplyAsyncWithClassLoader(Supplier<T> supplier) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return CompletableFuture.supplyAsync(() -> {
+            Thread thread = Thread.currentThread();
+            ClassLoader previous = thread.getContextClassLoader();
+            thread.setContextClassLoader(classLoader);
+            try {
+                return supplier.get();
+            } finally {
+                thread.setContextClassLoader(previous);
+            }
         });
     }
 

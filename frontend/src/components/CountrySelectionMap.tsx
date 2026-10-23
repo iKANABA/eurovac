@@ -6,50 +6,59 @@ import worldAtlas from 'world-atlas/countries-50m.json'
 import { EUROPEAN_COUNTRIES, MICRO_STATE_CODES } from '../countries'
 
 const WIDTH = 760
-const HEIGHT = 620
+const HEIGHT = 495
 
-const EUROPE_BOUNDS = { lonMin: -25, lonMax: 45, latMin: 34, latMax: 72 }
+const EXCLAVE_BOUNDS = { lonMin: -25, lonMax: 45, latMin: 34, latMax: 72 }
+const VIEW_BOUNDS = { lonMin: -25, lonMax: 45, latMin: 34, latMax: 63 }
 
-function withinEurope([lon, lat]: Position): boolean {
-  return lon >= EUROPE_BOUNDS.lonMin && lon <= EUROPE_BOUNDS.lonMax && lat >= EUROPE_BOUNDS.latMin && lat <= EUROPE_BOUNDS.latMax
+function withinExclaveBounds([lon, lat]: Position): boolean {
+  return lon >= EXCLAVE_BOUNDS.lonMin && lon <= EXCLAVE_BOUNDS.lonMax && lat >= EXCLAVE_BOUNDS.latMin && lat <= EXCLAVE_BOUNDS.latMax
 }
 
 function keepMainlandGeometry(geometry: Geometry): Geometry {
   if (geometry.type !== 'MultiPolygon') return geometry
-  const kept = geometry.coordinates.filter((polygon) => polygon[0].some(withinEurope))
+  const kept = geometry.coordinates.filter((polygon) => polygon[0].some(withinExclaveBounds))
   return kept.length > 0 ? { type: 'MultiPolygon', coordinates: kept } : geometry
 }
 
-const MICRO_STATE_OFFSETS: Record<string, [number, number]> = {
-  AD: [-45, 15],
-  MC: [40, 15],
-  SM: [40, -10],
-  VA: [-35, 20],
-  LI: [15, -40],
-  MT: [20, -35],
+// A closed Polygon ring is ambiguous on a sphere (winding can flip "inside" to
+// the far larger complement), which made fitSize compute a wildly wrong scale.
+// A MultiPoint of the same corners has no such ambiguity.
+const VIEW_BOUNDS_FEATURE: Feature<Geometry> = {
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'MultiPoint',
+    coordinates: [
+      [VIEW_BOUNDS.lonMin, VIEW_BOUNDS.latMin],
+      [VIEW_BOUNDS.lonMax, VIEW_BOUNDS.latMin],
+      [VIEW_BOUNDS.lonMax, VIEW_BOUNDS.latMax],
+      [VIEW_BOUNDS.lonMin, VIEW_BOUNDS.latMax],
+    ],
+  },
 }
 
 interface CountryShape {
   code: string
   path: string
-  centroid: [number, number]
 }
 
 function buildCountryShapes(): CountryShape[] {
   const topology = worldAtlas as unknown as Topology
   const collection = feature(topology, topology.objects.countries) as unknown as FeatureCollection<Geometry>
-  const byNumericId = new Map(EUROPEAN_COUNTRIES.map((c) => [c.numericId, c.code]))
-  const europeFeatures = collection.features
+  const byNumericId = new Map(
+    EUROPEAN_COUNTRIES.filter((c) => !MICRO_STATE_CODES.has(c.code)).map((c) => [c.numericId, c.code]),
+  )
+  const mapFeatures = collection.features
     .filter((f) => byNumericId.has(Number(f.id)))
     .map((f) => ({ ...f, geometry: keepMainlandGeometry(f.geometry) }) as Feature<Geometry>)
 
-  const projection = geoMercator().fitSize([WIDTH, HEIGHT], { type: 'FeatureCollection', features: europeFeatures })
+  const projection = geoMercator().fitSize([WIDTH, HEIGHT], VIEW_BOUNDS_FEATURE)
   const pathGenerator = geoPath(projection)
 
-  return europeFeatures.map((f) => ({
+  return mapFeatures.map((f) => ({
     code: byNumericId.get(Number(f.id))!,
     path: pathGenerator(f) ?? '',
-    centroid: pathGenerator.centroid(f),
   }))
 }
 
@@ -70,40 +79,15 @@ export function CountrySelectionMap({ selectedCountries, onToggle }: CountrySele
     >
       {COUNTRY_SHAPES.map((shape) => {
         const selected = selectedCountries.has(shape.code)
-        const isMicroState = MICRO_STATE_CODES.has(shape.code)
         return (
           <path
             key={shape.code}
             d={shape.path}
             className={`country-shape${selected ? ' country-shape--selected' : ''}`}
-            onClick={isMicroState ? undefined : () => onToggle(shape.code)}
-            style={isMicroState ? { pointerEvents: 'none' } : undefined}
+            onClick={() => onToggle(shape.code)}
           >
             <title>{shape.code}</title>
           </path>
-        )
-      })}
-
-      {COUNTRY_SHAPES.filter((s) => MICRO_STATE_CODES.has(s.code)).map((shape) => {
-        const [dx, dy] = MICRO_STATE_OFFSETS[shape.code] ?? [30, 0]
-        const [cx, cy] = shape.centroid
-        const bubbleX = cx + dx
-        const bubbleY = cy + dy
-        const selected = selectedCountries.has(shape.code)
-        return (
-          <g key={`micro-${shape.code}`}>
-            <line x1={cx} y1={cy} x2={bubbleX} y2={bubbleY} className="micro-state-leader" />
-            <circle
-              cx={bubbleX}
-              cy={bubbleY}
-              r={11}
-              className={`micro-state-dot${selected ? ' micro-state-dot--selected' : ''}`}
-              onClick={() => onToggle(shape.code)}
-            />
-            <text x={bubbleX} y={bubbleY} className="micro-state-label">
-              {shape.code}
-            </text>
-          </g>
         )
       })}
     </svg>

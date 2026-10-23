@@ -4,6 +4,7 @@ import { buildHolidayAnalysis } from '../analysis'
 import { countryName } from '../countries'
 import type { AnalysisRow, Selection, Subdivision, TypeFilter } from '../types'
 import { CountrySelectionMap } from './CountrySelectionMap'
+import { MicroStateSelector } from './MicroStateSelector'
 import { SubdivisionPicker } from './SubdivisionPicker'
 import { DateRangePicker } from './DateRangePicker'
 import { Legend } from './Legend'
@@ -110,6 +111,7 @@ export function HolidayAnalysisView() {
   return (
     <div className="holiday-analysis">
       <CountrySelectionMap selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
+      <MicroStateSelector selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
 
       {countryCodes.length > 0 && (
         <div className="subdivision-pickers">
