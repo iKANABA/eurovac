@@ -1,8 +1,9 @@
-import { countryName } from '../countries'
+import { rowLabel } from '../labels'
 import type { AnalysisViewRow } from '../types'
 
 interface HeatmapViewProps {
   rows: AnalysisViewRow[]
+  subdivisionNames: Map<string, string>
 }
 
 function cellClass(types: ('PUBLIC' | 'SCHOOL')[]): string {
@@ -12,7 +13,7 @@ function cellClass(types: ('PUBLIC' | 'SCHOOL')[]): string {
   return 'heatmap-cell'
 }
 
-export function HeatmapView({ rows }: HeatmapViewProps) {
+export function HeatmapView({ rows, subdivisionNames }: HeatmapViewProps) {
   if (rows.length === 0) return <p>Keine Länder ausgewählt.</p>
 
   return (
@@ -31,10 +32,7 @@ export function HeatmapView({ rows }: HeatmapViewProps) {
         <tbody>
           {rows.map((row) => (
             <tr key={`${row.countryCode}-${row.subdivisionCode ?? 'all'}`}>
-              <th scope="row">
-                {countryName(row.countryCode)}
-                {row.subdivisionCode ? ` (${row.subdivisionCode})` : ''}
-              </th>
+              <th scope="row">{rowLabel(row.countryCode, row.subdivisionCode, subdivisionNames)}</th>
               {row.days.map((day) => (
                 <td
                   key={day.date}

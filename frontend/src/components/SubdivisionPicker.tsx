@@ -1,31 +1,13 @@
-import { useEffect, useState } from 'react'
-import { fetchSubdivisions } from '../api'
 import type { Subdivision } from '../types'
 
 interface SubdivisionPickerProps {
-  countryCode: string
   countryName: string
+  subdivisions: Subdivision[]
   selectedSubdivisionCodes: string[] | null
   onChange: (subdivisionCodes: string[] | null) => void
 }
 
-export function SubdivisionPicker({ countryCode, countryName, selectedSubdivisionCodes, onChange }: SubdivisionPickerProps) {
-  const [subdivisions, setSubdivisions] = useState<Subdivision[]>([])
-
-  useEffect(() => {
-    let cancelled = false
-    fetchSubdivisions(countryCode)
-      .then((result) => {
-        if (!cancelled) setSubdivisions(result)
-      })
-      .catch(() => {
-        if (!cancelled) setSubdivisions([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [countryCode])
-
+export function SubdivisionPicker({ countryName, subdivisions, selectedSubdivisionCodes, onChange }: SubdivisionPickerProps) {
   if (subdivisions.length === 0) return null
 
   const isChecked = (code: string) => selectedSubdivisionCodes === null || selectedSubdivisionCodes.includes(code)

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchAnalysis } from '../api'
+import { fetchAnalysis, fetchSubdivisions } from '../api'
 import { buildHolidayAnalysis } from '../analysis'
 import { countryName } from '../countries'
-import type { AnalysisRow, Selection, TypeFilter } from '../types'
+import type { AnalysisRow, Selection, Subdivision, TypeFilter } from '../types'
 import { CountrySelectionMap } from './CountrySelectionMap'
 import { SubdivisionPicker } from './SubdivisionPicker'
 import { DateRangePicker } from './DateRangePicker'
+import { Legend } from './Legend'
 import { HeatmapView } from './HeatmapView'
 import { TableView } from './TableView'
 
@@ -27,6 +28,7 @@ function defaultTo(from: string): string {
 
 export function HolidayAnalysisView() {
   const [selections, setSelections] = useState<Map<string, string[] | null>>(new Map())
+  const [subdivisionsByCountry, setSubdivisionsByCountry] = useState<Map<string, Subdivision[]>>(new Map())
   const [from, setFrom] = useState(today())
   const [to, setTo] = useState(defaultTo(today()))
   const [typeFilter, setTypeFilter] = useState<TypeFilter>({ public: true, school: true })
@@ -34,7 +36,26 @@ export function HolidayAnalysisView() {
   const [rawRows, setRawRows] = useState<AnalysisRow[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const countryCodes = useMemo(() => [...selections.keys()], [selections]);
+  const countryCodes = useMemo(() => [...selections.keys()], [selections])
+
+  useEffect(() => {
+    const missing = countryCodes.filter((code) => !subdivisionsByCountry.has(code))
+    if (missing.length === 0) return
+    let cancelled = false
+    Promise.all(missing.map((code) => fetchSubdivisions(code).then((result) => [code, result] as const)))
+      .then((entries) => {
+        if (cancelled) return
+        setSubdivisionsByCountry((prev) => {
+          const next = new Map(prev)
+          for (const [code, result] of entries) next.set(code, result)
+          return next
+        })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [countryCodes, subdivisionsByCountry])
 
   useEffect(() => {
     if (countryCodes.length === 0) {
@@ -78,6 +99,14 @@ export function HolidayAnalysisView() {
     [rawRows, from, to, typeFilter],
   )
 
+  const subdivisionNames = useMemo(() => {
+    const names = new Map<string, string>()
+    for (const list of subdivisionsByCountry.values()) {
+      for (const subdivision of list) names.set(subdivision.code, subdivision.name)
+    }
+    return names
+  }, [subdivisionsByCountry])
+
   return (
     <div className="holiday-analysis">
       <CountrySelectionMap selectedCountries={new Set(countryCodes)} onToggle={toggleCountry} />
@@ -87,8 +116,8 @@ export function HolidayAnalysisView() {
           {countryCodes.map((code) => (
             <SubdivisionPicker
               key={code}
-              countryCode={code}
               countryName={countryName(code)}
+              subdivisions={subdivisionsByCountry.get(code) ?? []}
               selectedSubdivisionCodes={selections.get(code) ?? null}
               onChange={(codes) => setSubdivisions(code, codes)}
             />
@@ -130,10 +159,15 @@ export function HolidayAnalysisView() {
 
       {countryCodes.length === 0 ? (
         <p>Wähle mindestens ein Land auf der Karte aus, um die Analyse zu starten.</p>
-      ) : viewMode === 'heatmap' ? (
-        <HeatmapView rows={analysisRows} />
       ) : (
-        <TableView rows={analysisRows} />
+        <>
+          {viewMode === 'heatmap' && <Legend />}
+          {viewMode === 'heatmap' ? (
+            <HeatmapView rows={analysisRows} subdivisionNames={subdivisionNames} />
+          ) : (
+            <TableView rows={analysisRows} subdivisionNames={subdivisionNames} />
+          )}
+        </>
       )}
     </div>
   )
